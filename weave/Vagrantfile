@@ -1,0 +1,34 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+base_image = "bento/centos-7.2"
+nodes = 3
+
+ips = nodes.times.map { |i|
+  "192.168.33.#{10+i}"
+}
+
+Vagrant.configure("2") do |config|
+
+  config.vm.provider :virtualbox do |v|
+    v.check_guest_additions = false
+    v.functional_vboxsf     = false
+    v.gui                   = false
+  end
+
+  if Vagrant.has_plugin?("vagrant-vbguest") then
+    config.vbguest.auto_update = false
+  end
+
+  config.ssh.insert_key = false
+
+  nodes.times do |index|
+    ip = ips[index]
+    node_name = "node#{index}"
+    config.vm.define node_name do |node|
+      node.vm.box = base_image
+      node.vm.network "private_network", ip: ip
+      node.vm.hostname = node_name
+    end
+  end
+end

@@ -1,0 +1,13 @@
+[Unit]
+Description=Weave Network
+Documentation=http://docs.weave.works/weave/latest_release/
+Requires=weave-router.service
+After=weave-router.service
+[Service]
+PermissionsStartOnly=true
+EnvironmentFile=/etc/sysconfig/weave
+ExecStartPre=/usr/local/bin/weave launch-proxy --rewrite-inspect
+ExecStart=/bin/docker attach weaveproxy
+ExecStop=/usr/local/bin/weave stop-proxy
+[Install]
+WantedBy=multi-user.target
