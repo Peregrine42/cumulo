@@ -34,10 +34,15 @@ Vagrant.configure("2") do |config|
         /vagrant/gateway_provision.sh
 
         export PRIORITY=#{ index == 0 ? 101 : 100 }
+        export BACKUP_OR_MASTER=#{ 
+          index == 0 ? "MASTER" : "BACKUP"
+        }
         /vagrant/gateway_keepalived_setup.sh
 
         export IP=#{ip}
         /vagrant/gateway_kubelet_docker_setup.sh
+
+        /vagrant/gateway_haproxy_setup.sh
       SH
     end
   end

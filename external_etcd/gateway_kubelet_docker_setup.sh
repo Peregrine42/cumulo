@@ -17,6 +17,7 @@ EOF
 mkdir -p /etc/kubernetes/manifests
 rm -rf /etc/kubernetes/manifests/*
 cat > /etc/kubernetes/manifests/nginx.yaml <<EOF
+--- 
 apiVersion: v1
 kind: Pod
 metadata:
@@ -25,9 +26,9 @@ spec:
   hostNetwork: true
   containers:
   - name: nginx
-    image: nginx
+    image: peregrine42/nginx8080
     ports:
-    - containerPort: 80
+    - containerPort: 8080
 EOF
 
 systemctl enable kubelet

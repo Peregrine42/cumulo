@@ -1,5 +1,6 @@
 #! /bin/bash
 
+rm -rf /etc/keepalived/*
 cat > /etc/keepalived/keepalived.conf <<EOF
 vrrp_script chk_kubelet {
   script "echo" # a dummy checker for now
@@ -8,7 +9,7 @@ vrrp_script chk_kubelet {
 
 vrrp_instance VI_1 {
   interface enp0s8
-  state BACKUP
+  state $BACKUP_OR_MASTER
   virtual_router_id 51
   priority $PRIORITY # 101 on master, 100 on backup
   virtual_ipaddress {
