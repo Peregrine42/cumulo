@@ -9,8 +9,8 @@ spec:
     image: elcolio/etcd
     args:
     - --name=etcd0
-    - --initial-advertise-peer-urls=http://192.168.33.10:2380
-    - --listen-peer-urls=http://192.168.33.10:2380
+    - --initial-advertise-peer-urls=http://0.0.0.0:2380
+    - --listen-peer-urls=http://0.0.0.0:2380
     - --listen-client-urls=http://192.168.33.10:2379,http://127.0.0.1:2379
     - --advertise-client-urls=http://192.168.33.10:2379
     - --initial-cluster=etcd0=http://192.168.33.10:2380,etcd1=http://192.168.33.11:2380,etcd2=http://192.168.33.12:2380
