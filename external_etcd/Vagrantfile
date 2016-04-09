@@ -42,7 +42,11 @@ Vagrant.configure("2") do |config|
         export IP=#{ip}
         /vagrant/gateway_kubelet_docker_setup.sh
 
+        /vagrant/demo_nginx_manifest_setup.sh
+
         /vagrant/gateway_haproxy_setup.sh
+
+        
       SH
     end
   end
