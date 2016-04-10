@@ -3,6 +3,7 @@ from fabric.api import *
 from fabric.contrib.console import confirm
 from fabric.contrib.files import upload_template
 import re
+import sys
 
 cluster_size = 3
 gateway_ip = "192.168.33.100"
@@ -176,14 +177,17 @@ def proxy():
            { "gateway_ip": gateway_ip }
         )
 
+@hosts('localhost')
 def sky_dns():
-    local("np")
     local("mkdir -p tmp")
     with open('templates/sky_dns.yaml', 'r') as template:
         template_contents = template.read()
     with open('tmp/sky_dns.yaml', 'w') as tempfile:
-        tempfile.write(template_contents % (gateway_ip))
-    local("kubectl create -f tmp/sky_dns.yaml")
+        tempfile.write(template_contents % { "gateway_ip": gateway_ip })
+    result = local("kubectl create -f tmp/sky_dns.yaml | echo")
+
+def haproxy_conf():
+    demo_haproxy_config();
 
 def demo_1():
     update();
@@ -217,4 +221,4 @@ def stage_2():
     proxy();
 
 def stage_3():
-    sky_dns();
+    execute(sky_dns);

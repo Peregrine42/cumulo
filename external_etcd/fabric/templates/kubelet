@@ -1,8 +1,9 @@
-KUBELET_ADDRESS="--address=%(ip)s"
+KUBELET_ADDRESS="--address=0.0.0.0"
 KUBELET_HOSTNAME="--hostname-override=%(ip)s"
 #KUBELET_API_SERVER="--api-servers=http://%(gateway_ip)s:8080"
 KUBELET_ARGS="\
 --config=/etc/kubernetes/manifests \
 --v=4 \
 --allow-privileged=true \
+--register-node \
 "
