@@ -105,6 +105,7 @@ def flannel():
         run("etcdctl set /coreos.com/network/config < /root/flannel_config.json")
 	run("systemctl restart flanneld")
 	run("systemctl enable flanneld")
+
         run("mkdir -p /etc/systemd/system/docker.service.d")
         upload_template(
             "templates/flannel_dropin.conf",
@@ -142,6 +143,47 @@ def apiserver():
             { "gateway_ip": gateway_ip }
 	)
 
+def set_kubelet_to_apiserver():
+    with settings(user='root', password='vagrant'):
+        upload_template(
+            "templates/kubelet-talking-to-api",
+            "/etc/kubernetes/kubelet",
+	    { "ip": env.host,
+              "gateway_ip": gateway_ip }
+        )
+
+def control_manager():
+    with settings(user='root', password='vagrant'):
+        upload_template(
+           "templates/kube-controller-manager.yaml",
+           "/etc/kubernetes/manifests/kube-controller-manager.yaml",
+           { "gateway_ip": gateway_ip }
+        )
+
+def scheduler():
+    with settings(user='root', password='vagrant'):
+        upload_template(
+           "templates/kube-scheduler.yaml",
+           "/etc/kubernetes/manifests/kube-scheduler.yaml",
+           { "gateway_ip": gateway_ip }
+        )
+
+def proxy():
+    with settings(user='root', password='vagrant'):
+        upload_template(
+           "templates/kube-proxy.yaml",
+           "/etc/kubernetes/manifests/kube-proxy.yaml",
+           { "gateway_ip": gateway_ip }
+        )
+
+def sky_dns():
+    local("np")
+    local("mkdir -p tmp")
+    with open('templates/sky_dns.yaml', 'r') as template:
+        template_contents = template.read()
+    with open('tmp/sky_dns.yaml', 'w') as tempfile:
+        tempfile.write(template_contents % (gateway_ip))
+    local("kubectl create -f tmp/sky_dns.yaml")
 
 def demo_1():
     update();
@@ -169,6 +211,10 @@ def stage_1():
 def stage_2():
     flannel();
     apiserver();
-    #control_manager();
-    #scheduler();
-    #proxy();
+    set_kubelet_to_apiserver();
+    control_manager();
+    scheduler();
+    proxy();
+
+def stage_3():
+    sky_dns();
