@@ -2,8 +2,12 @@
 
 rm -rf /etc/keepalived/*
 cat > /etc/keepalived/keepalived.conf <<EOF
+#vrrp_script chk_kubelet {
+  #script "echo"
+  #interval 2
+#}
 vrrp_script chk_kubelet {
-  script "echo" # a dummy checker for now
+  script "curl 127.0.0.1:2379/v2/keys"
   interval 2
 }
 

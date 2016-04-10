@@ -1,0 +1,23 @@
+---
+- yum: name=keepalived state=latest
+- yum: name=kubernetes state=latest
+- yum: name=etcd state=latest
+- yum: name=flannel state=latest
+- yum: name=haproxy state=latest
+
+- yum: name=firewalld state=removed
+- yum: name=iptables-services state=removed
+
+- file: path=/etc/kubernetes/apiserver state=absent
+- file: path=/etc/kubernetes/config state=absent
+- file: > 
+    path=/etc/kubernetes/controller-manager
+    state=absent
+- file: path=/etc/kubernetes/proxy state=absent
+- file: path=/etc/kubernetes/scheduler state=absent
+
+- template: >
+    src=templates/kubelet.j2
+    dest=/etc/kubernetes/kubelet
+- notify:
+  - restart kubelet

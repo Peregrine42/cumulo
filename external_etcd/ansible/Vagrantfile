@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+base_image = "bento/centos-7.2"
+nodes = 3
+
+gateway_ips = nodes.times.map { |i|
+  "192.168.33.#{10+i}"
+}
+
+gateway_nodes = nodes.times.map { |i|
+  "node#{i}"
+}
+
+Vagrant.configure("2") do |config|
+
+  config.vm.provider :virtualbox do |v|
+    v.check_guest_additions = false
+    v.functional_vboxsf     = false
+    v.gui                   = false
+  end
+
+  if Vagrant.has_plugin?("vagrant-vbguest") then
+    config.vbguest.auto_update = false
+  end
+
+  config.ssh.insert_key = false
+
+  nodes.times do |index|
+    ip = gateway_ips[index]
+    config.vm.define gateway_nodes[index] do |node|
+      node.vm.box = base_image
+      node.vm.network "private_network", ip: ip
+      node.vm.hostname = gateway_nodes[index]
+    end
+    if index == 2
+      config.vm.provision "ansible" do |ansible|
+        ansible.groups = {
+          "gateways" => gateway_nodes,
+          "gateway_primaries" => gateway_nodes[0]
+        }
+        ansible.verbose = "v"
+        ansible.playbook = "gateway.yml"
+        ansible.limit = "all"
+      end
+    end
+  end
+end

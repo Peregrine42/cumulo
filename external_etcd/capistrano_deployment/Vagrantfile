@@ -1,0 +1,58 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+base_image = "bento/centos-7.2"
+nodes = 3
+
+ips = nodes.times.map { |i|
+  "192.168.33.#{10+i}"
+}
+
+etcd_peer_list = ips.each_with_index.map { |ip, index|
+  "etcd#{index}=http://#{ip}:2380"
+}.join(",")
+
+Vagrant.configure("2") do |config|
+
+  config.vm.provider :virtualbox do |v|
+    v.check_guest_additions = false
+    v.functional_vboxsf     = false
+    v.gui                   = false
+  end
+
+  if Vagrant.has_plugin?("vagrant-vbguest") then
+    config.vbguest.auto_update = false
+  end
+
+  config.ssh.insert_key = false
+
+  nodes.times do |index|
+    ip = ips[index]
+    node_name = "node#{index}"
+    config.vm.define node_name do |node|
+      node.vm.box = base_image
+      node.vm.network "private_network", ip: ip
+      node.vm.hostname = node_name
+
+      node.vm.provision :shell, :inline => <<-SH
+        export PRIORITY=#{ index == 0 ? 101 : 100 }
+        export BACKUP_OR_MASTER=#{ 
+          index == 0 ? "MASTER" : "BACKUP"
+        }
+        export IP=#{ip}
+        export INDEX=#{index}
+        export ETCD_CLUSTER_NAME=etcd_cluster_04_2016
+        export ETCD_INITIAL_CLUSTER_LIST=#{etcd_peer_list}
+        /vagrant/gateway_provision.sh
+
+        /vagrant/gateway_keepalived_setup.sh
+
+        /vagrant/gateway_kubelet_docker_setup.sh
+        /vagrant/demo_nginx_manifest_setup.sh
+        /vagrant/demo_haproxy_setup.sh
+
+        /vagrant/gateway_etcd_setup.sh
+      SH
+    end
+  end
+end

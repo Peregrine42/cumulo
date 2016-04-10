@@ -1,0 +1,6 @@
+KUBELET_ADDRESS="--address={{ ansible_enp0s8.ipv4.address }}"
+KUBELET_HOSTNAME="--hostname-override={{ 
+  ansible_enp0s8.ipv4.address 
+}}"
+#KUBELET_API_SERVER="--api-servers=http://192.168.33.100:8080"
+KUBELET_ARGS="--config=/etc/kubernetes/manifests"

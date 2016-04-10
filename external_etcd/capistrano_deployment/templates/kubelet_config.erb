@@ -1,0 +1,5 @@
+KUBELET_ADDRESS="--address=<%= host.ip %>"
+KUBELET_HOSTNAME="--hostname-override=<%= host.ip %>"
+#KUBELET_API_SERVER=\
+#"--api-servers="http://<%= fetch :gateway_ip %>:8080"
+KUBELET_ARGS="--config=/etc/kubernetes/manifests"

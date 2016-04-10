@@ -1,0 +1,1 @@
+{"rsync":{"/vagrant":{"guestpath":"/vagrant","hostpath":"/Users/duncan/dev/cumulo/external_etcd/fabric","disabled":false,"__vagrantfile":true,"owner":"vagrant","group":"vagrant"}}}
