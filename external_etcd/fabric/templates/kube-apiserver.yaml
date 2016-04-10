@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: kube-apiserver
+    image: quay.io/coreos/hyperkube:v1.2.0_coreos.1
+    command:
+    - /hyperkube
+    - apiserver
+    - --bind-address=0.0.0.0
+    - --insecure-bind-address=0.0.0.0
+    - --service-cluster-ip-range=42.42.0.0/16
+    - --advertise-address=%(gateway_ip)s
+    - --etcd-servers=http://%(gateway_ip)s:2379
+    ports:
+    - containerPort: 8080
+      hostPort: 8080
+      name: local

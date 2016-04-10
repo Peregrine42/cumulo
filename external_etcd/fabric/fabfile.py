@@ -27,16 +27,28 @@ def update():
     sudo("yum update -y")
 
 def keepalived(template_file):
-    primary = env.host == public_ips[0]
     with settings(user='root', password='vagrant'):
 	run("yum install -y keepalived")
 	run("rm -rf /etc/keepalived/*")
 	upload_template(
 	    template_file, 
 	    "/etc/keepalived/keepalived.conf",
-	    { "priority": 101 if primary else 100,
-	      "role": "MASTER" if primary else "BACKUP" }
+	    { "priority": 100 + public_ips.index(env.host),
+	      "role": "BACKUP" }
 	)
+        upload_template(
+            "templates/keepalived_to_master.sh",
+            "/etc/keepalived/to_master.sh",
+            {},
+            mirror_local_mode=True
+        )
+        upload_template(
+            "templates/keepalived_to_backup.sh",
+            "/etc/keepalived/to_backup.sh",
+            {},
+            mirror_local_mode=True
+        )
+
 	run("systemctl restart keepalived")
 	run("systemctl enable keepalived")
 
@@ -102,6 +114,7 @@ def flannel():
         run("systemctl stop docker")
 	run("ip link delete docker0 | echo")
         run("systemctl start docker")
+        run("systemctl restart kubelet")
 
 def demo_keepalived():
     keepalived("templates/demo/keepalived_no_check.conf");
@@ -121,6 +134,14 @@ def demo_haproxy_config():
 	)
 	run("systemctl restart haproxy")
     
+def apiserver():
+    with settings(user='root', password='vagrant'):
+	upload_template(
+	    "templates/kube-apiserver.yaml",
+	    "/etc/kubernetes/manifests/kube-apiserver.yaml",
+            { "gateway_ip": gateway_ip }
+	)
+
 
 def demo_1():
     update();
@@ -148,6 +169,6 @@ def stage_1():
 def stage_2():
     flannel();
     apiserver();
-    control_manager();
-    scheduler();
-    proxy();
+    #control_manager();
+    #scheduler();
+    #proxy();
