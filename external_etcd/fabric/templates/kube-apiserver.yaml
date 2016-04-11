@@ -21,3 +21,6 @@ spec:
     - containerPort: 8080
       hostPort: 8080
       name: local
+    - containerPort: 443
+      hostPort: 443
+      name: https

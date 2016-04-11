@@ -13,6 +13,8 @@ spec:
     - controller-manager
     - --master=http://%(gateway_ip)s:8080
     - --leader-elect=true 
+    - --address=0.0.0.0
+    - --cluster-cidr=17.17.0.0/16
     #livenessProbe:
       #httpGet:
         #host: 127.0.0.1

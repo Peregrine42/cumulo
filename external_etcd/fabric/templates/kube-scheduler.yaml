@@ -11,7 +11,7 @@ spec:
     command:
     - /hyperkube
     - scheduler
-    - --master=http://%(gateway_ip)s:8080
+    - --master=%(gateway_ip)s:8080
     - --leader-elect=true
     #livenessProbe:
       #httpGet:

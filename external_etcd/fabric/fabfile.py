@@ -184,7 +184,8 @@ def sky_dns():
         template_contents = template.read()
     with open('tmp/sky_dns.yaml', 'w') as tempfile:
         tempfile.write(template_contents % { "gateway_ip": gateway_ip })
-    result = local("kubectl create -f tmp/sky_dns.yaml | echo")
+    local("kubectl delete -f tmp/sky_dns.yaml | echo")
+    local("kubectl create -f tmp/sky_dns.yaml | echo")
 
 def haproxy_conf():
     demo_haproxy_config();

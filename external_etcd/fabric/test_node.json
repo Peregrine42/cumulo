@@ -2,6 +2,6 @@
   "kind": "Node",
   "apiVersion": "v1",
   "metadata": {
-    "name": "192.168.33.12"
+    "name": "192.168.33.10"
   }
 }

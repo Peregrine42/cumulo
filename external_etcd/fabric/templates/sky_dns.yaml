@@ -48,6 +48,8 @@ spec:
         command:
         - /kube2sky
         - --domain="cumulo"
+        - --etcd-server="http://%(gateway_ip)s:2379"
+        - --kube-master-url="http://%(gateway_ip)s:2379"
       - name: skydns
         image: skynetservices/skydns
         resources:
@@ -61,7 +63,7 @@ spec:
         - /skydns
         - -machines=http://%(gateway_ip)s
         - -discover
-        - -dns_addr=0.0.0.0:53
+        - -addr=0.0.0.0:53
         - -domain=cumulo.
         ports:
         - containerPort: 53
