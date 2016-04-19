@@ -5,14 +5,16 @@ from fabric.contrib.files import upload_template
 import re
 import sys
 
-cluster_size = 3
-gateway_ip = "192.168.33.100"
+with open("gateway") as target_file:
+    gateway_ip = target_file.read().splitlines()[0]
+
+with open("hosts") as target_file:
+    public_ips = target_file.read().splitlines()
+
 env.parallel = True
-numbers_to_ips = lambda i: "192.168.33." + str(10+i)
-public_ips = map(numbers_to_ips, range(0, cluster_size))
 
 numbers_to_names = lambda i: "etcd" + str(i)
-names = map(numbers_to_names, range(0, cluster_size))
+names = map(numbers_to_names, range(0, len(public_ips)))
 etcd_cluster_name = "etcd_cluster_04_2016"
 ips_to_peers = lambda peer: peer[0] + "=http://" + peer[1] + ":2380"
 etcd_peers = ",".join(map(ips_to_peers, zip(names, public_ips)))
@@ -24,37 +26,69 @@ def vagrant():
     env.key_filename = \
 	re.findall(r'IdentityFile\s+"([^"]+)', result)[0]
 
+def cumulo():
+    env.user = "cumulo"
+    env.hosts = public_ips
+
 def update():
     sudo("yum update -y")
+    sudo("yum install -y net-tools")
+    sudo("yum remove -y firewalld")
+
+def sudo_upload_template(source, target, **kwargs):
+    kwargs["use_sudo"] = True
+    upload_template(
+        source, 
+        target,
+        **kwargs
+    )
+    sudo("chown -R root:root " + target)
+    sudo("chmod -R +r " + target)
+    sudo("chmod -R +w " + target)
+
 
 def keepalived(template_file):
-    with settings(user='root', password='vagrant'):
-	run("yum install -y keepalived")
-	run("rm -rf /etc/keepalived/*")
-	upload_template(
-	    template_file, 
-	    "/etc/keepalived/keepalived.conf",
-	    { "priority": 100 + public_ips.index(env.host),
-	      "role": "BACKUP" }
-	)
-        upload_template(
-            "templates/keepalived_to_master.sh",
-            "/etc/keepalived/to_master.sh",
-            {},
-            mirror_local_mode=True
-        )
-        upload_template(
-            "templates/keepalived_to_backup.sh",
-            "/etc/keepalived/to_backup.sh",
-            {},
-            mirror_local_mode=True
-        )
+    other_ips = "\n    ".join(filter(lambda x: x != env.host, public_ips))
 
-	run("systemctl restart keepalived")
-	run("systemctl enable keepalived")
+    sudo("yum install -y keepalived")
+    sudo("rm -rf /etc/keepalived/*")
+    sudo_upload_template(
+        template_file, 
+        "/etc/keepalived/keepalived.conf",
+        context={ "priority": 100 + public_ips.index(env.host),
+          "gateway_ip": gateway_ip,
+          "role": "MASTER",
+          "ip": env.host,
+          "other_ips": other_ips }
+    )
+    sudo_upload_template(
+        "templates/keepalived_to_master.sh",
+        "/etc/keepalived/to_master.sh",
+        context={ "gateway_ip": gateway_ip },
+        mirror_local_mode=True
+    )
+    sudo_upload_template(
+        "templates/keepalived_to_backup.sh",
+        "/etc/keepalived/to_backup.sh",
+        context={ "gateway_ip": gateway_ip },
+        mirror_local_mode=True
+    )
+    sudo_upload_template(
+        "templates/keepalived_sysctl.conf",
+        "/etc/sysctl.conf"
+    )
+    
+    sudo("mkdir /etc/systemd/system/keepalived.conf.d")
+    sudo_upload_template(
+        "templates/keepalived_systemd_override.conf",
+        "/etc/systemd/system/keepalived.conf.d/override.conf"
+    )
+
+    sudo("systemctl restart keepalived")
+    sudo("systemctl enable keepalived")
 
 def kubelet_and_docker():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
 	run("yum install -y kubernetes")
 	run("rm -rf /etc/kubernetes/*")
 	run("mkdir -p /etc/kubernetes/manifests")
@@ -71,14 +105,14 @@ def kubelet_and_docker():
 	run("systemctl enable kubelet")
 
 def haproxy():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
 	run("yum install -y haproxy")
 	run("rm -rf /etc/haproxy/*")
 	run("systemctl restart haproxy")
 	run("systemctl enable haproxy")
 
 def etcd():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
 	run("yum install -y etcd")
 	upload_template(
 	    "templates/etcd.conf",
@@ -93,7 +127,7 @@ def etcd():
 	run("systemctl enable etcd")
 
 def flannel():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
 	run("yum install -y flannel")
 	upload_template(
 	    "templates/flannel",
@@ -122,14 +156,14 @@ def demo_keepalived():
     keepalived("templates/demo/keepalived_no_check.conf");
 
 def demo_nginx():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
 	upload_template(
 	    "templates/demo/nginx_manifest.yaml",
 	    "/etc/kubernetes/manifests/nginx.yaml"
 	)
 
 def demo_haproxy_config():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
 	upload_template(
 	    "templates/demo/haproxy.cfg",
 	    "/etc/haproxy/haproxy.cfg"
@@ -137,7 +171,7 @@ def demo_haproxy_config():
 	run("systemctl restart haproxy")
     
 def apiserver():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
 	upload_template(
 	    "templates/kube-apiserver.yaml",
 	    "/etc/kubernetes/manifests/kube-apiserver.yaml",
@@ -145,7 +179,7 @@ def apiserver():
 	)
 
 def set_kubelet_to_apiserver():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
         upload_template(
             "templates/kubelet-talking-to-api",
             "/etc/kubernetes/kubelet",
@@ -154,7 +188,7 @@ def set_kubelet_to_apiserver():
         )
 
 def control_manager():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
         upload_template(
            "templates/kube-controller-manager.yaml",
            "/etc/kubernetes/manifests/kube-controller-manager.yaml",
@@ -162,7 +196,7 @@ def control_manager():
         )
 
 def scheduler():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
         upload_template(
            "templates/kube-scheduler.yaml",
            "/etc/kubernetes/manifests/kube-scheduler.yaml",
@@ -170,7 +204,7 @@ def scheduler():
         )
 
 def proxy():
-    with settings(user='root', password='vagrant'):
+    with settings(user='root', password=password):
         upload_template(
            "templates/kube-proxy.yaml",
            "/etc/kubernetes/manifests/kube-proxy.yaml",
