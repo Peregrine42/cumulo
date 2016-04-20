@@ -37,15 +37,13 @@ def update():
 
 def sudo_upload_template(source, target, **kwargs):
     kwargs["use_sudo"] = True
+    kwargs["mode"] = "0644"
     upload_template(
         source, 
         target,
         **kwargs
     )
     sudo("chown -R root:root " + target)
-    sudo("chmod -R +r " + target)
-    sudo("chmod -R +w " + target)
-
 
 def keepalived(template_file):
     other_ips = "\n    ".join(filter(lambda x: x != env.host, public_ips))
@@ -64,56 +62,55 @@ def keepalived(template_file):
     sudo_upload_template(
         "templates/keepalived_to_master.sh",
         "/etc/keepalived/to_master.sh",
-        context={ "gateway_ip": gateway_ip },
-        mirror_local_mode=True
+        context={ "gateway_ip": gateway_ip }
     )
     sudo_upload_template(
         "templates/keepalived_to_backup.sh",
         "/etc/keepalived/to_backup.sh",
-        context={ "gateway_ip": gateway_ip },
-        mirror_local_mode=True
+        context={ "gateway_ip": gateway_ip }
     )
     sudo_upload_template(
         "templates/keepalived_sysctl.conf",
         "/etc/sysctl.conf"
     )
     
-    sudo("mkdir /etc/systemd/system/keepalived.conf.d")
+    sudo("mkdir -p /etc/systemd/system/keepalived.conf.d")
     sudo_upload_template(
         "templates/keepalived_systemd_override.conf",
         "/etc/systemd/system/keepalived.conf.d/override.conf"
     )
 
+    sudo("systemctl daemon-reload")
     sudo("systemctl restart keepalived")
     sudo("systemctl enable keepalived")
 
 def kubelet_and_docker():
     with settings(user='root', password=password):
-	run("yum install -y kubernetes")
-	run("rm -rf /etc/kubernetes/*")
-	run("mkdir -p /etc/kubernetes/manifests")
+	sudo("yum install -y kubernetes")
+	sudo("rm -rf /etc/kubernetes/*")
+	sudo("mkdir -p /etc/kubernetes/manifests")
 	upload_template(
 	    "templates/kubelet",
 	    "/etc/kubernetes/kubelet", 
 	    { "ip": env.host,
               "gateway_ip": gateway_ip }
 	)
-	run("systemctl restart docker")
-	run("systemctl enable docker")
+	sudo("systemctl restart docker")
+	sudo("systemctl enable docker")
 
-	run("systemctl restart kubelet")
-	run("systemctl enable kubelet")
+	sudo("systemctl restart kubelet")
+	sudo("systemctl enable kubelet")
 
 def haproxy():
     with settings(user='root', password=password):
-	run("yum install -y haproxy")
-	run("rm -rf /etc/haproxy/*")
-	run("systemctl restart haproxy")
-	run("systemctl enable haproxy")
+	sudo("yum install -y haproxy")
+	sudo("rm -rf /etc/haproxy/*")
+	sudo("systemctl restart haproxy")
+	sudo("systemctl enable haproxy")
 
 def etcd():
     with settings(user='root', password=password):
-	run("yum install -y etcd")
+	sudo("yum install -y etcd")
 	upload_template(
 	    "templates/etcd.conf",
 	    "/etc/etcd/etcd.conf",
@@ -123,12 +120,12 @@ def etcd():
               "etcd_initial_cluster_list": etcd_peers
 	    }
 	)
-	run("systemctl restart etcd")
-	run("systemctl enable etcd")
+	sudo("systemctl restart etcd")
+	sudo("systemctl enable etcd")
 
 def flannel():
     with settings(user='root', password=password):
-	run("yum install -y flannel")
+	sudo("yum install -y flannel")
 	upload_template(
 	    "templates/flannel",
 	    "/etc/sysconfig/flanneld"
@@ -137,20 +134,20 @@ def flannel():
             "templates/flannel_config.json",
             "/root/flannel_config.json"
 	)
-        run("etcdctl set /coreos.com/network/config < /root/flannel_config.json")
-	run("systemctl restart flanneld")
-	run("systemctl enable flanneld")
+        sudo("etcdctl set /coreos.com/network/config < /root/flannel_config.json")
+	sudo("systemctl restart flanneld")
+	sudo("systemctl enable flanneld")
 
-        run("mkdir -p /etc/systemd/system/docker.service.d")
+        sudo("mkdir -p /etc/systemd/system/docker.service.d")
         upload_template(
             "templates/flannel_dropin.conf",
             "/etc/systemd/system/docker.service.d/flannel.conf"
 	)
-        run("systemctl daemon-reload")
-        run("systemctl stop docker")
-	run("ip link delete docker0 | echo")
-        run("systemctl start docker")
-        run("systemctl restart kubelet")
+        sudo("systemctl daemon-reload")
+        sudo("systemctl stop docker")
+	sudo("ip link delete docker0 | echo")
+        sudo("systemctl start docker")
+        sudo("systemctl restart kubelet")
 
 def demo_keepalived():
     keepalived("templates/demo/keepalived_no_check.conf");
@@ -168,7 +165,7 @@ def demo_haproxy_config():
 	    "templates/demo/haproxy.cfg",
 	    "/etc/haproxy/haproxy.cfg"
 	)
-	run("systemctl restart haproxy")
+	sudo("systemctl restart haproxy")
     
 def apiserver():
     with settings(user='root', password=password):
