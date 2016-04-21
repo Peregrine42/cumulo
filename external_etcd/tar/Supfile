@@ -1,0 +1,30 @@
+networks:
+  vagrant:
+    hosts:
+      - vagrant@192.168.33.10
+      - vagrant@192.168.33.11
+      - vagrant@192.168.33.12
+
+commands:
+  update:
+    run: sudo yum update -y
+  set_network_packages:
+    run: sudo yum install -y net-tools
+    run: sudo yum remove -y firewalld
+  install_keepalived:
+    run: sudo yum install -y keepalived
+  extract_tar:
+    run: sudo tar -C / -xvf payload.tar --strip-components=2 --overwrite
+  restart_everything:
+    run: sudo systemctl restart keepalived
+  enable_everything:
+    run: sudo systemctl enable keepalived
+
+targets:
+  deploy:
+    - update
+    - set_network_packages
+    - install_keepalived
+    - extract_tar
+    - restart_everything
+    - enable_everything

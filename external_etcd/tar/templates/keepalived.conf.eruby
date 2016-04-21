@@ -1,0 +1,23 @@
+vrrp_script chk_etcd {
+  script "echo"
+  interval 2
+}
+
+vrrp_instance VI_1 {
+  debug 2
+  interface <%= interface %>
+  state <%= role %>
+  virtual_router_id 51
+  priority <%= priority %>
+  virtual_ipaddress {
+    <%= virtual_ip %>
+  }
+
+  nopreempt
+
+  track_script {
+    chk_etcd
+  }
+
+  lvs_sync_daemon_interface eth0
+}

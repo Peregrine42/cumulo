@@ -1,0 +1,1 @@
+{"rsync":{"/vagrant":{"guestpath":"/vagrant","hostpath":"/Users/duncan/dev/cumulo/external_etcd/tar","disabled":false,"__vagrantfile":true,"owner":"vagrant","group":"vagrant"}}}
