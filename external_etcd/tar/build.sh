@@ -18,4 +18,4 @@ scp dist/192.168.33.10.tar vagrant@192.168.33.10:payload.tar
 scp dist/192.168.33.11.tar vagrant@192.168.33.11:payload.tar
 scp dist/192.168.33.12.tar vagrant@192.168.33.12:payload.tar
 
-sup vagrant deploy_stage_1 deploy_stage_2 deploy_stage_3 deploy_stage_4
+sup vagrant deploy_stage_1 deploy_stage_2 deploy_stage_3

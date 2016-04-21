@@ -11,6 +11,8 @@ commands:
   set_network_packages:
     run: sudo yum install -y net-tools
     run: sudo yum remove -y firewalld
+  set_flannel_config:
+    run: etcdctl set /coreos.com/network/config < flannel_config.json
   install_keepalived:
     run: sudo yum install -y keepalived
   install_kubernetes:
@@ -63,19 +65,18 @@ targets:
     - install_etcd
     - clear_kubernetes_config
     - clear_haproxy_config
-  deploy_stage_3:
-    - install_flannel
-  deploy_stage_4:
     - extract_tar
     - restart_keepalived
     - restart_docker
     - restart_kubelet
     - restart_haproxy
     - restart_etcd
-    - restart_flannel
     - enable_keepalived
     - enable_docker
     - enable_kubelet
     - enable_haproxy
     - enable_etcd
+  deploy_stage_3:
+    - install_flannel
+    - restart_flannel
     - enable_flannel
