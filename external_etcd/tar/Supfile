@@ -13,18 +13,69 @@ commands:
     run: sudo yum remove -y firewalld
   install_keepalived:
     run: sudo yum install -y keepalived
+  install_kubernetes:
+    run: sudo yum install -y kubernetes
+  install_haproxy:
+    run: sudo yum install -y haproxy
+  install_etcd:
+    run: sudo yum install -y etcd
+  install_flannel:
+    run: sudo yum install -y flannel
+  clear_kubernetes_config:
+    run: sudo rm -rf /etc/kubernetes/*
+  clear_haproxy_config:
+    run: sudo rm -rf /etc/haproxy/*
   extract_tar:
     run: sudo tar -C / -xvf payload.tar --strip-components=2 --overwrite
-  restart_everything:
+  restart_keepalived:
     run: sudo systemctl restart keepalived
-  enable_everything:
+  restart_docker:
+    run: sudo systemctl restart docker
+  restart_kubelet:
+    run: sudo systemctl restart kubelet
+  restart_haproxy:
+    run: sudo systemctl restart haproxy
+  restart_etcd:
+    run: sudo systemctl restart etcd
+  restart_flannel:
+    run: sudo systemctl restart flannel
+  enable_keepalived:
     run: sudo systemctl enable keepalived
+  enable_docker:
+    run: sudo systemctl enable docker
+  enable_kubelet:
+    run: sudo systemctl enable kubelet
+  enable_haproxy:
+    run: sudo systemctl enable haproxy
+  enable_etcd:
+    run: sudo systemctl enable etcd
+  enable_flannel:
+    run: sudo systemctl enable flannel
 
 targets:
-  deploy:
+  deploy_stage_1:
     - update
     - set_network_packages
     - install_keepalived
+  deploy_stage_2:
+    - install_kubernetes
+    - install_haproxy
+    - install_etcd
+    - clear_kubernetes_config
+    - clear_haproxy_config
+  deploy_stage_3:
+    - install_flannel
+  deploy_stage_4:
     - extract_tar
-    - restart_everything
-    - enable_everything
+    - restart_keepalived
+    - restart_docker
+    - restart_kubelet
+    - restart_haproxy
+    - restart_etcd
+    - restart_flannel
+    - enable_keepalived
+    - enable_docker
+    - enable_kubelet
+    - enable_haproxy
+    - enable_etcd
+    - enable_flannel

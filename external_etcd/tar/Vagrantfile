@@ -21,6 +21,11 @@ Vagrant.configure("2") do |config|
   end
 
   config.ssh.insert_key = false
+  config.ssh.private_key_path = [
+    '~/.vagrant.d/insecure_private_key', 
+    '~/.ssh/id_rsa'
+  ]
+  config.ssh.forward_agent = true
 
   nodes.times do |index|
     ip = ips[index]
@@ -29,6 +34,12 @@ Vagrant.configure("2") do |config|
       node.vm.box = base_image
       node.vm.network "private_network", ip: ip
       node.vm.hostname = node_name
+      config.vm.provision "shell" do |s|
+        ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
+        s.inline = <<-SHELL
+          echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
+        SHELL
+      end
     end
   end
 end
